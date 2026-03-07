@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MATVEI BANK | Экосистема</title>
+    <style>
+        :root { --main-color: #00f2ff; --bg-color: #0d0d0d; --card-bg: #1a1a1a; }
+        body { background: var(--bg-color); color: white; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .container { width: 100%; max-width: 500px; }
+        .bank-card { background: linear-gradient(135deg, #222, #333); padding: 20px; border-radius: 15px; border: 1px solid var(--main-color); box-shadow: 0 0 20px rgba(0,242,255,0.2); margin-bottom: 20px; position: relative; overflow: hidden; }
+        .card-number { font-size: 1.2rem; letter-spacing: 2px; margin: 15px 0; color: var(--main-color); }
+        .balance { font-size: 2rem; font-weight: bold; }
+        .job-section { background: var(--card-bg); padding: 20px; border-radius: 15px; border: 1px solid #333; }
+        button { width: 100%; padding: 12px; margin: 10px 0; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .btn-work { background: var(--main-color); color: black; }
+        .btn-work:hover { background: white; box-shadow: 0 0 15px var(--main-color); }
+        input { width: calc(100% - 24px); padding: 10px; margin: 10px 0; background: #222; border: 1px solid #444; color: white; border-radius: 5px; }
+        .hidden { display: none; }
+        .notification { color: #00ff88; font-size: 0.9rem; margin-top: 5px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>🏦 MATVEI BANK</h1>
+        
+        <div id="reg-section" class="bank-card">
+            <h3>Открыть карту</h3>
+            <input type="text" id="user-name" placeholder="Твое Имя">
+            <button class="btn-work" onclick="createAccount()">ПОЛУЧИТЬ КАРТУ</button>
+        </div>
+
+        <div id="main-section" class="hidden">
+            <div class="bank-card">
+                <div style="font-size: 0.8rem; color: #888;">ВИРТУАЛЬНАЯ КАРТА</div>
+                <div id="display-name" style="font-weight: bold;">Матвей</div>
+                <div id="display-card" class="card-number">4400 0000 0000 0000</div>
+                <div class="balance"><span id="display-balance">0</span> 💸</div>
+            </div>
+
+            <div class="job-section">
+                <h3>💼 ДОСТУПНЫЕ ЗАДАНИЯ</h3>
+                <div id="job-board">
+                    <p id="job-text">Бот 'Завод': Реши пример и получи 500!</p>
+                    <div id="math-problem" style="font-weight: bold; font-size: 1.2rem; margin: 10px 0;"></div>
+                    <input type="number" id="job-answer" placeholder="Ответ">
+                    <button class="btn-work" onclick="checkWork()">СДАТЬ РАБОТУ</button>
+                    <div id="job-notif" class="notification"></div>
+                </div>
+                <button style="background: #333; color: #888;" onclick="resetData()">СБРОСИТЬ ВСЕ ДАННЫЕ</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let userData = JSON.parse(localStorage.getItem('bank_data')) || null;
+        let currentAnswer = 0;
+
+        function updateUI() {
+            if (userData) {
+                document.getElementById('reg-section').classList.add('hidden');
+                document.getElementById('main-section').classList.remove('hidden');
+                document.getElementById('display-name').innerText = userData.name;
+                document.getElementById('display-card').innerText = userData.card;
+                document.getElementById('display-balance').innerText = userData.balance;
+                generateJob();
+            }
+        }
+
+        function createAccount() {
+            const name = document.getElementById('user-name').value;
+            if (!name) return alert("Введи имя!");
+            
+            userData = {
+                name: name,
+                card: `4400 ${Math.floor(1000 + Math.random() * 9000)} ${Math.floor(1000 + Math.random() * 9000)} ${Math.floor(1000 + Math.random() * 9000)}`,
+                balance: 0
+            };
+            save();
+            updateUI();
+        }
+
+        function generateJob() {
+            const a = Math.floor(Math.random() * 50) + 10;
+            const b = Math.floor(Math.random() * 50) + 10;
+            currentAnswer = a + b;
+            document.getElementById('math-problem').innerText = `${a} + ${b} = ?`;
+        }
+
+        function checkWork() {
+            const ans = document.getElementById('job-answer').value;
+            const notif = document.getElementById('job-notif');
+            
+            if (parseInt(ans) === currentAnswer) {
+                userData.balance += 500;
+                notif.innerText = "✅ Работа принята! +500 на карту.";
+                notif.style.color = "#00ff88";
+                save();
+                updateUI();
+                document.getElementById('job-answer').value = "";
+            } else {
+                notif.innerText = "❌ Ошибка в расчетах! Попробуй еще раз.";
+                notif.style.color = "#ff4444";
+            }
+        }
+
+        function save() { localStorage.setItem('bank_data', JSON.stringify(userData)); }
+        function resetData() { localStorage.removeItem('bank_data'); location.reload(); }
+
+        updateUI();
+    </script>
+</body>
+</html>
