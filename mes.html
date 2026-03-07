@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aura Connect | Messenger</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: #0d0d0d; color: #fff; }
+        .chat-area { height: calc(100vh - 180px); }
+        .msg-mine { background: #6366f1; border-radius: 20px 20px 4px 20px; }
+        .msg-their { background: #262626; border-radius: 20px 20px 20px 4px; }
+    </style>
+</head>
+<body class="flex justify-center">
+    <div class="w-full max-w-md h-screen flex flex-col bg-black">
+        <div class="p-4 flex justify-between items-center border-b border-white/10">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-yellow-400 to-red-500"></div>
+                <div>
+                    <p class="font-bold">Aura Support</p>
+                    <p class="text-[10px] text-green-500">В сети</p>
+                </div>
+            </div>
+            <div class="flex gap-4">
+                <button onclick="chat.call()" class="text-xl">📞</button>
+                <button class="text-xl">⚙️</button>
+            </div>
+        </div>
+
+        <div id="chat-box" class="chat-area overflow-y-auto p-4 space-y-4">
+            </div>
+
+        <div class="p-4 bg-white/5 border-t border-white/10">
+            <div class="flex gap-2">
+                <button class="text-xl">🎁</button>
+                <input id="msg-input" type="text" placeholder="Сообщение..." class="flex-1 bg-transparent border-none focus:ring-0 outline-none">
+                <button onclick="chat.send()" class="bg-purple-600 px-4 py-2 rounded-xl text-xs font-bold">ОТПР.</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="call-screen" class="fixed inset-0 bg-purple-900/90 backdrop-blur-xl hidden flex-col items-center justify-center z-50">
+        <div class="w-32 h-32 rounded-full bg-white/10 animate-pulse mb-8"></div>
+        <h2 class="text-2xl font-bold mb-2">Вызов...</h2>
+        <p class="mb-20 opacity-60">Aura Support</p>
+        <button onclick="chat.endCall()" class="bg-red-500 w-16 h-16 rounded-full flex items-center justify-center text-2xl">📵</button>
+    </div>
+
+    <script>
+        const chat = {
+            messages: [],
+            send() {
+                const input = document.getElementById('msg-input');
+                if(!input.value) return;
+                this.messages.push({text: input.value, mine: true});
+                input.value = '';
+                this.render();
+            },
+            call() { document.getElementById('call-screen').classList.remove('hidden'); },
+            endCall() { document.getElementById('call-screen').classList.add('hidden'); },
+            render() {
+                const box = document.getElementById('chat-box');
+                box.innerHTML = this.messages.map(m => `
+                    <div class="flex ${m.mine ? 'justify-end' : 'justify-start'} animate-fade-in">
+                        <div class="p-3 max-w-[80%] ${m.mine ? 'msg-mine' : 'msg-their'} text-sm shadow-lg">
+                            ${m.text}
+                        </div>
+                    </div>
+                `).join('');
+                box.scrollTop = box.scrollHeight;
+            }
+        };
+    </script>
+</body>
+</html>
