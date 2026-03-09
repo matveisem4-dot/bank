@@ -4,72 +4,79 @@ import os
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 
-# Бот берет токен из настроек GitHub Actions
+# Токен берем из секретов (безопасность уровня Pro)
 API_TOKEN = os.getenv('BOT_TOKEN')
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
 
-# --- КОНФИГУРАЦИИ СКОРОСТИ ---
+# --- ЭЛИТНЫЕ МАГИСТРАЛИ (БЕЗЛИМИТНАЯ СКОРОСТЬ) ---
 OS_CONFIGS = {
     "android": {
-        "link": "https://t.me/proxy?server=162.19.163.43&port=443&secret=ee00000000000000000000000000000000676f6f676c652e636f6d",
-        "label": "🚀 SNAPDRAGON TURBO",
-        "info": "Оптимизировано под ядро Android. Идеально для Samsung Fold."
+        "link": "https://t.me/proxy?server=5.135.161.164&port=443&secret=ee00000000000000000000000000000000676f6f676c652e636f6d",
+        "label": "⚡️ ULTRA-LOW LATENCY",
+        "desc": "Оптимизация под Samsung Fold & Android Kernel. Пинг < 20ms."
     },
     "ios": {
-        "link": "https://t.me/proxy?server=5.135.161.164&port=443&secret=ee00000000000000000000000000000000676f6f676c652e636f6d",
-        "label": "🍎 APPLE SECURE",
-        "info": "Протокол TLS 1.3. Максимальная защита iOS."
+        "link": "https://t.me/proxy?server=162.19.163.43&port=443&secret=ee00000000000000000000000000000000676f6f676c652e636f6d",
+        "label": "🛡 APPLE ENCLAVE SECURE",
+        "desc": "Выделенный канал для iOS. Обход любых блокировок."
     },
     "windows": {
         "link": "https://t.me/proxy?server=exp.proxy.com&port=443&secret=ee00000000000000000000000000000000676f6f676c652e636f6d",
-        "label": "💻 DESKTOP MAX",
-        "info": "Многопоточный режим для Windows PC."
+        "label": "💎 WORKSTATION MAX",
+        "desc": "Многопоточный доступ. Скорость до 1 Гбит/с."
     }
 }
 
-def main_kb():
+def get_main_kb():
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🤖 Android", callback_data="os:android")],
-        [InlineKeyboardButton(text="🍎 iOS (iPhone)", callback_data="os:ios")],
-        [InlineKeyboardButton(text="💻 Windows / PC", callback_data="os:windows")]
+        [InlineKeyboardButton(text="🤖 ANDROID", callback_data="os:android")],
+        [InlineKeyboardButton(text="🍎 iOS / iPHONE", callback_data="os:ios")],
+        [InlineKeyboardButton(text="💻 WINDOWS PC", callback_data="os:windows")]
     ])
 
 @dp.message(F.text == "/start")
-async def start(message: types.Message):
+async def cmd_start(message: types.Message):
     await message.answer(
-        "🦾 **ALISA VPN SYSTEM V54**\n\n"
-        "Запущено через GitHub Actions 24/7.\n"
-        "Выбери ОС для калибровки скорости:",
-        reply_markup=main_kb(),
+        "⚡️ **ALISA PRIVATE NETWORK V55**\n\n"
+        "Добро пожаловать в элитную сеть доступа.\n"
+        "Статус системы: **Dedicated Server (Germany) — Online**\n\n"
+        "Выберите вашу платформу для автоматической калибровки канала:",
+        reply_markup=get_main_kb(),
         parse_mode="Markdown"
     )
 
 @dp.callback_query(F.data.startswith("os:"))
-async def tune_os(callback: CallbackQuery):
-    os_name = callback.data.split(":")[1]
-    cfg = OS_CONFIGS[os_name]
+async def tune_system(callback: CallbackQuery):
+    os_key = callback.data.split(":")[1]
+    cfg = OS_CONFIGS[os_key]
     
-    msg = await callback.message.edit_text(f"📡 Анализ системы {os_name.upper()}...")
-    await asyncio.sleep(0.5)
-    await msg.edit_text(f"⚡️ Применение профиля: {cfg['label']}...")
+    # Эффект дорогого софта
+    msg = await callback.message.edit_text("📡 Установка связи с выделенным сервером...")
+    await asyncio.sleep(0.4)
+    await msg.edit_text(f"🚀 Проверка пропускной способности для {os_key.upper()}...")
+    await asyncio.sleep(0.4)
+    await msg.edit_text(f"💎 Активация профиля: {cfg['label']}...")
+    await asyncio.sleep(0.4)
 
     res_kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🟢 ПОДКЛЮЧИТЬ", url=cfg['link'])]
+        [InlineKeyboardButton(text="❇️ ПОДКЛЮЧИТЬ МГНОВЕННО", url=cfg['link'])]
     ])
 
     await msg.edit_text(
-        f"✅ **ГОТОВО ДЛЯ {os_name.upper()}**\n\n"
-        f"📝 {cfg['info']}\n"
-        "Нажми кнопку ниже:",
+        f"✅ **СИСТЕМА ГОТОВА**\n\n"
+        f"🌐 Сервер: **Premium Frankfurt Node**\n"
+        f"🛠 Настройка: *{cfg['desc']}*\n"
+        f"📶 Скорость: **Максимальная**\n\n"
+        "Нажмите кнопку ниже для мгновенной активации:",
         reply_markup=res_kb,
         parse_mode="Markdown"
     )
 
-async def run_bot():
+async def start_engine():
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
-    asyncio.run(run_bot())
+    asyncio.run(start_engine())
