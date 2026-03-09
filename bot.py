@@ -4,79 +4,58 @@ import os
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 
-# Токен берем из секретов (безопасность уровня Pro)
+# Берем токен из Secret
 API_TOKEN = os.getenv('BOT_TOKEN')
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
 
-# --- ЭЛИТНЫЕ МАГИСТРАЛИ (БЕЗЛИМИТНАЯ СКОРОСТЬ) ---
-OS_CONFIGS = {
-    "android": {
-        "link": "https://t.me/proxy?server=5.135.161.164&port=443&secret=ee00000000000000000000000000000000676f6f676c652e636f6d",
-        "label": "⚡️ ULTRA-LOW LATENCY",
-        "desc": "Оптимизация под Samsung Fold & Android Kernel. Пинг < 20ms."
-    },
-    "ios": {
-        "link": "https://t.me/proxy?server=162.19.163.43&port=443&secret=ee00000000000000000000000000000000676f6f676c652e636f6d",
-        "label": "🛡 APPLE ENCLAVE SECURE",
-        "desc": "Выделенный канал для iOS. Обход любых блокировок."
-    },
-    "windows": {
-        "link": "https://t.me/proxy?server=exp.proxy.com&port=443&secret=ee00000000000000000000000000000000676f6f676c652e636f6d",
-        "label": "💎 WORKSTATION MAX",
-        "desc": "Многопоточный доступ. Скорость до 1 Гбит/с."
-    }
-}
-
-def get_main_kb():
+# Кнопки выбора ОС
+def get_os_kb():
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🤖 ANDROID", callback_data="os:android")],
-        [InlineKeyboardButton(text="🍎 iOS / iPHONE", callback_data="os:ios")],
-        [InlineKeyboardButton(text="💻 WINDOWS PC", callback_data="os:windows")]
+        [InlineKeyboardButton(text="🤖 Android", callback_data="os:android")],
+        [InlineKeyboardButton(text="🍎 iOS / iPhone", callback_data="os:ios")],
+        [InlineKeyboardButton(text="💻 Windows PC", callback_data="os:windows")]
     ])
 
 @dp.message(F.text == "/start")
 async def cmd_start(message: types.Message):
     await message.answer(
-        "⚡️ **ALISA PRIVATE NETWORK V55**\n\n"
-        "Добро пожаловать в элитную сеть доступа.\n"
-        "Статус системы: **Dedicated Server (Germany) — Online**\n\n"
-        "Выберите вашу платформу для автоматической калибровки канала:",
-        reply_markup=get_main_kb(),
+        "💎 **ALISA PRIVATE NETWORK V56**\n"
+        "Статус: **Dedicated Server (Germany) — Online**\n\n"
+        "Выберите платформу для мгновенной настройки:",
+        reply_markup=get_os_kb(),
         parse_mode="Markdown"
     )
 
 @dp.callback_query(F.data.startswith("os:"))
-async def tune_system(callback: CallbackQuery):
-    os_key = callback.data.split(":")[1]
-    cfg = OS_CONFIGS[os_key]
+async def tune_os(callback: CallbackQuery):
+    os_name = callback.data.split(":")[1]
+    # Прямая ссылка на прокси (без лишних переходов)
+    links = {
+        "android": "https://t.me/proxy?server=162.19.163.43&port=443&secret=ee00000000000000000000000000000000676f6f676c652e636f6d",
+        "ios": "https://t.me/proxy?server=5.135.161.164&port=443&secret=ee00000000000000000000000000000000676f6f676c652e636f6d",
+        "windows": "https://t.me/proxy?server=exp.proxy.com&port=443&secret=ee00000000000000000000000000000000676f6f676c652e636f6d"
+    }
     
-    # Эффект дорогого софта
-    msg = await callback.message.edit_text("📡 Установка связи с выделенным сервером...")
-    await asyncio.sleep(0.4)
-    await msg.edit_text(f"🚀 Проверка пропускной способности для {os_key.upper()}...")
-    await asyncio.sleep(0.4)
-    await msg.edit_text(f"💎 Активация профиля: {cfg['label']}...")
-    await asyncio.sleep(0.4)
-
     res_kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="❇️ ПОДКЛЮЧИТЬ МГНОВЕННО", url=cfg['link'])]
+        [InlineKeyboardButton(text="🟢 ПОДКЛЮЧИТЬ", url=links[os_name])]
     ])
-
-    await msg.edit_text(
-        f"✅ **СИСТЕМА ГОТОВА**\n\n"
-        f"🌐 Сервер: **Premium Frankfurt Node**\n"
-        f"🛠 Настройка: *{cfg['desc']}*\n"
-        f"📶 Скорость: **Максимальная**\n\n"
-        "Нажмите кнопку ниже для мгновенной активации:",
+    
+    await callback.message.edit_text(
+        f"✅ **ПРОФИЛЬ {os_name.upper()} СКОНФИГУРИРОВАН**\n"
+        "Скорость: 1 Гбит/с\n\n"
+        "Нажмите кнопку ниже:",
         reply_markup=res_kb,
         parse_mode="Markdown"
     )
 
-async def start_engine():
+async def main():
+    # ГЛАВНОЕ: очищаем все зависшие запросы
+    await bot.delete_webhook(drop_pending_updates=True)
+    print(">>> ALISA VPN: Бот успешно запущен и очередь очищена.")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
-    asyncio.run(start_engine())
+    asyncio.run(main())
