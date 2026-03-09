@@ -1,33 +1,32 @@
 import asyncio
 import logging
+import os
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 
-# Твой API-токен
-API_TOKEN = '8576920183:AAFVRGOOhA8bkHkqCntJaKE2o4Kw9RXc9B8'
+# Бот берет токен из настроек GitHub Actions
+API_TOKEN = os.getenv('BOT_TOKEN')
 
-# Логирование для контроля системы
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
 
-# --- ВЫСОКОСКОРОСТНЫЕ МАГИСТРАЛИ (ГЛУШИЛКИ + NO-LATENCY) ---
-# Эти IP — это "золотой фонд" бесплатных прокси, отобранных по пингу
+# --- КОНФИГУРАЦИИ СКОРОСТИ ---
 OS_CONFIGS = {
     "android": {
         "link": "https://t.me/proxy?server=162.19.163.43&port=443&secret=ee00000000000000000000000000000000676f6f676c652e636f6d",
-        "label": "🚀 РЕЖИМ: SNAPDRAGON TURBO",
-        "info": "Оптимизировано под ядро Linux/Android. Глушилки DPI активны."
+        "label": "🚀 SNAPDRAGON TURBO",
+        "info": "Оптимизировано под ядро Android. Идеально для Samsung Fold."
     },
     "ios": {
         "link": "https://t.me/proxy?server=5.135.161.164&port=443&secret=ee00000000000000000000000000000000676f6f676c652e636f6d",
-        "label": "🍎 РЕЖИМ: APPLE SECURE",
-        "info": "Протокол TLS 1.3. Обход блокировок Apple ID и iCloud."
+        "label": "🍎 APPLE SECURE",
+        "info": "Протокол TLS 1.3. Максимальная защита iOS."
     },
     "windows": {
         "link": "https://t.me/proxy?server=exp.proxy.com&port=443&secret=ee00000000000000000000000000000000676f6f676c652e636f6d",
-        "label": "💻 РЕЖИМ: DESKTOP MAX",
-        "info": "Многопоточный режим. Идеально для загрузки 4K видео."
+        "label": "💻 DESKTOP MAX",
+        "info": "Многопоточный режим для Windows PC."
     }
 }
 
@@ -41,9 +40,9 @@ def main_kb():
 @dp.message(F.text == "/start")
 async def start(message: types.Message):
     await message.answer(
-        "🦾 **ALISA VPN: CORE SYSTEM V53**\n\n"
-        "Система готова к запуску. Выбор ОС необходим для калибровки скорости.\n"
-        "**Где запускаем ВПН?**",
+        "🦾 **ALISA VPN SYSTEM V54**\n\n"
+        "Запущено через GitHub Actions 24/7.\n"
+        "Выбери ОС для калибровки скорости:",
         reply_markup=main_kb(),
         parse_mode="Markdown"
     )
@@ -53,30 +52,23 @@ async def tune_os(callback: CallbackQuery):
     os_name = callback.data.split(":")[1]
     cfg = OS_CONFIGS[os_name]
     
-    # Визуальный процесс калибровки (эффект "Ахуеть")
-    msg = await callback.message.edit_text(f"📡 Сканирование узлов для {os_name.upper()}...")
-    await asyncio.sleep(0.4)
-    await msg.edit_text("🧪 Тестирование пропускной способности...")
-    await asyncio.sleep(0.4)
+    msg = await callback.message.edit_text(f"📡 Анализ системы {os_name.upper()}...")
+    await asyncio.sleep(0.5)
     await msg.edit_text(f"⚡️ Применение профиля: {cfg['label']}...")
-    await asyncio.sleep(0.4)
 
     res_kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🟢 ПОДКЛЮЧИТЬ В ОДИН КЛИК", url=cfg['link'])]
+        [InlineKeyboardButton(text="🟢 ПОДКЛЮЧИТЬ", url=cfg['link'])]
     ])
 
     await msg.edit_text(
-        f"✅ **ПРОФИЛЬ {os_name.upper()} АКТИВИРОВАН**\n\n"
+        f"✅ **ГОТОВО ДЛЯ {os_name.upper()}**\n\n"
         f"📝 {cfg['info']}\n"
-        f"📡 Скорость: **Unlimited**\n"
-        f"🛡 Защита: **Military Grade**\n\n"
-        "Нажми кнопку ниже, чтобы включить Алиса ВПН:",
+        "Нажми кнопку ниже:",
         reply_markup=res_kb,
         parse_mode="Markdown"
     )
 
 async def run_bot():
-    print(">>> БОТ ЗАПУЩЕН И ГОТОВ К РАБОТЕ")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
