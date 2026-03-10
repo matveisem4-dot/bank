@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>ALISA TERMINAL 2026 | CLOUD-SYNC</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    <style>
+        :root { --neon: #00f2ff; --bg: #050505; --card: #111; }
+        body { background: var(--bg); color: #fff; font-family: monospace; padding: 20px; }
+        .terminal { max-width: 600px; margin: 0 auto; border: 2px solid var(--neon); border-radius: 10px; padding: 20px; box-shadow: 0 0 20px var(--neon); }
+        .header { border-bottom: 1px solid var(--neon); padding-bottom: 10px; margin-bottom: 20px; color: var(--neon); }
+        input, select { background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 10px; width: 90%; margin: 10px 0; }
+        button { background: var(--neon); color: #000; border: none; padding: 15px; width: 95%; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+        .vpn-block { margin-top: 20px; border-top: 1px dashed #444; padding-top: 20px; }
+        .log { background: #000; padding: 10px; height: 150px; overflow-y: scroll; font-size: 12px; color: #0f0; margin-top: 20px; border: 1px solid #222; }
+    </style>
+</head>
+<body>
+
+<div class="terminal">
+    <div class="header">SYSTEM: ALISA_NET_TERMINAL_V66<br>DATABASE: REPO_SYNC_ACTIVE</div>
+
+    <h3>🛫 РЕГИСТРАЦИЯ ПАССАЖИРА</h3>
+    <input type="text" id="pName" placeholder="ФИО ПАССАЖИРА">
+    <select id="flight">
+        <option value="SU-100">SU-100 (MOSCOW)</option>
+        <option value="RJ-450">RJ-450 (DUBAI)</option>
+        <option value="TK-777">TK-777 (TOKYO)</option>
+    </select>
+    <button onclick="saveToCloud()">ВЫПУСТИТЬ И ЗАПИСАТЬ В БАЗУ</button>
+
+    <div id="qr-output" style="margin: 20px 0; display:none; background: #fff; padding: 10px; border-radius: 5px;"></div>
+
+    <div class="vpn-block">
+        <h3>🛡 ALISA VPN CONTROL</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <button style="background: #111; color: var(--neon); border: 1px solid var(--neon);" onclick="window.location.href='https://t.me/proxy?server=95.216.155.155&port=443&secret=ee00000000000000000000000000000000676f6f676c652e636f6d'">ANDROID TURBO</button>
+            <button style="background: #111; color: #f00; border: 1px solid #f00;" onclick="window.location.href='https://t.me/proxy?server=disable'">HARD RESET VPN</button>
+        </div>
+    </div>
+
+    <div class="log" id="terminal-log"> > System initialized... Waiting for command...</div>
+</div>
+
+<script>
+    // --- НАСТРОЙКИ СИНХРОНИЗАЦИИ ---
+    const GH_TOKEN = "ТВОЙ_GITHUB_TOKEN"; // Сюда вставь токен
+    const REPO = "ТВОЙ_ЛОГИН/ТВОЙ_РЕПО";
+    const FILE_PATH = "database.json";
+
+    function log(msg) {
+        const l = document.getElementById('terminal-log');
+        l.innerHTML += `<br>> ${msg}`;
+        l.scrollTop = l.scrollHeight;
+    }
+
+    async def saveToCloud() {
+        const name = document.getElementById('pName').value;
+        const flight = document.getElementById('flight').value;
+        if(!name) return alert("Введите ФИО!");
+
+        log(`Generating ticket for ${name}...`);
+        const ticketId = Math.random().toString(36).substr(2, 6).toUpperCase();
+
+        // 1. Получаем текущую базу из Гитхаба
+        log("Accessing GitHub Cloud Database...");
+        try {
+            const getRes = await fetch(`https://api.github.com/repos/${REPO}/contents/${FILE_PATH}`, {
+                headers: { Authorization: `token ${GH_TOKEN}` }
+            });
+            const fileData = await getRes.json();
+            const currentContent = JSON.parse(atob(fileData.content));
+
+            // 2. Добавляем новый билет
+            currentContent.push({ id: ticketId, name, flight, time: new Date().toISOString() });
+
+            // 3. Отправляем обратно (Commit)
+            log("Syncing database... Writing commit...");
+            const putRes = await fetch(`https://api.github.com/repos/${REPO}/contents/${FILE_PATH}`, {
+                method: "PUT",
+                headers: { Authorization: `token ${GH_TOKEN}`, "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    message: `Add ticket ${ticketId}`,
+                    content: btoa(JSON.stringify(currentContent, null, 2)),
+                    sha: fileData.sha
+                })
+            });
+
+            if(putRes.ok) {
+                log("✅ DATABASE SYNCED SUCCESSFULLY!");
+                showQR(ticketId);
+            }
+        } catch(e) {
+            log("❌ ERROR: Cloud sync failed. Check Token.");
+        }
+    }
+
+    function showQR(id) {
+        const out = document.getElementById('qr-output');
+        out.style.display = "block";
+        out.innerHTML = "";
+        const canvas = document.createElement('canvas');
+        QRCode.toCanvas(canvas, `ALISA-ID-${id}`, { width: 150 }, () => {
+            out.appendChild(canvas);
+        });
+    }
+</script>
+</body>
+</html>
