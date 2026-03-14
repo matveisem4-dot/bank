@@ -5,54 +5,55 @@
     <title>Банковский Терминал</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: sans-serif; background: #2c3e50; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .terminal-box { background: #ecf0f1; width: 320px; border-radius: 20px; padding: 30px; box-shadow: 0 15px 40px rgba(0,0,0,0.4); text-align: center; }
-        .screen { background: #34495e; color: #2ecc71; padding: 20px; border-radius: 10px; font-size: 24px; font-family: monospace; margin-bottom: 20px; }
-        input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 8px; border: 1px solid #bdc3c7; font-size: 18px; box-sizing: border-box; text-align: center; }
-        .btn-confirm { width: 100%; padding: 15px; background: #27ae60; color: white; border: none; border-radius: 8px; font-size: 18px; cursor: pointer; }
+        body { background: #2c3e50; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .terminal { background: #ecf0f1; width: 340px; border-radius: 20px; padding: 40px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); text-align: center; }
+        .screen { background: #34495e; color: #2ecc71; padding: 25px; border-radius: 10px; font-size: 32px; font-family: monospace; margin-bottom: 30px; }
+        input { width: 100%; padding: 15px; margin: 10px 0; border: 1px solid #bdc3c7; border-radius: 8px; font-size: 20px; box-sizing: border-box; text-align: center; }
+        .btn { width: 100%; padding: 15px; background: #27ae60; color: white; border: none; border-radius: 8px; font-size: 20px; cursor: pointer; transition: 0.2s; }
+        .btn:hover { background: #219150; }
     </style>
 </head>
 <body>
 
-<div class="terminal-box">
-    <div id="display" class="screen">ВСТАВЬТЕ КАРТУ</div>
+<div class="terminal">
+    <div id="display" class="screen">ЖДУ ЗАКАЗ</div>
     <div id="ui" style="display:none">
         <input type="text" id="c_num" placeholder="НОМЕР КАРТЫ">
         <input type="password" id="c_pin" placeholder="PIN">
-        <button class="btn-confirm" onclick="executePayment()">ОПЛАТИТЬ</button>
+        <button class="btn" onclick="pay()">ОПЛАТИТЬ</button>
     </div>
 </div>
 
 <script>
-    const SB_URL = 'https://shswkhgwrxsulqqczbjj.supabase.co';
-    const SB_KEY = 'ВСТАВЬ_СВОЙ_ANON_KEY_СЮДА';
-    const sb = supabase.createClient(SB_URL, SB_KEY);
-    const TID = 'STATION_01';
+    const URL = 'https://shswkhgwrxsulqqczbjj.supabase.co';
+    const KEY = 'ВСТАВЬ_СЮДА_СВОЙ_ANON_KEY';
+    const sb = supabase.createClient(URL, KEY);
+    const SID = 'STATION_01';
 
-    sb.channel('term').on('postgres_changes', 
-        { event: 'UPDATE', schema: 'public', table: 'sessions', filter: `id=eq.${TID}` }, 
+    sb.channel('t1').on('postgres_changes', 
+        { event: 'UPDATE', schema: 'public', table: 'sessions', filter: `id=eq.${SID}` }, 
         (p) => {
-            if(p.new.status === 'paying') {
+            if (p.new.status === 'paying') {
                 document.getElementById('display').innerText = p.new.total + " ₽";
                 document.getElementById('ui').style.display = 'block';
             }
         }
     ).subscribe();
 
-    async function executePayment() {
+    async function pay() {
         const card = document.getElementById('c_num').value;
         const pin = document.getElementById('c_pin').value;
         
-        const { data: bank } = await sb.from('bank').select('*').eq('card_num', card).single();
-        const { data: sess } = await sb.from('sessions').select('*').eq('id', TID).single();
+        const { data: dbCard } = await sb.from('bank').select('*').eq('card_num', card).single();
+        const { data: sess } = await sb.from('sessions').select('*').eq('id', SID).single();
 
-        if(bank && bank.pin === pin && bank.balance >= sess.total) {
-            await sb.from('bank').update({ balance: bank.balance - sess.total }).eq('card_num', card);
-            await sb.from('sessions').update({ status: 'success' }).eq('id', TID);
+        if (dbCard && dbCard.pin === pin && dbCard.balance >= sess.total) {
+            await sb.from('bank').update({ balance: dbCard.balance - sess.total }).eq('card_num', card);
+            await sb.from('sessions').update({ status: 'success' }).eq('id', SID);
             document.getElementById('display').innerText = "УСПЕШНО";
             document.getElementById('ui').style.display = 'none';
         } else {
-            alert("Ошибка транзакции");
+            alert("ОТКАЗ: Ошибка карты или средств");
         }
     }
 </script>
