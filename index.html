@@ -2,134 +2,101 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TERMINAL SYSTEM V69</title>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    <title>Million Global Bank System</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --bg: #010409; --panel: #0d1117; --border: #30363d; --text: #e6edf3; --accent: #238636; --danger: #da3633; }
-        body { background: var(--bg); color: var(--text); font-family: -apple-system, system-ui, sans-serif; margin: 0; padding: 20px; }
-        .grid { display: grid; grid-template-columns: 320px 1fr; gap: 20px; max-width: 1200px; margin: 0 auto; }
-        .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 20px; }
-        h3 { font-size: 14px; margin: 0 0 15px 0; color: #8b949e; text-transform: uppercase; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
-        
-        input { width: 100%; padding: 10px; margin-bottom: 15px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: #fff; box-sizing: border-box; outline: none; }
-        input:focus { border-color: #2f81f7; }
-        button { width: 100%; padding: 12px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; font-size: 13px; transition: 0.2s; }
-        .btn-main { background: var(--accent); color: #fff; }
-        .btn-refresh { background: #21262d; color: #c9d1d9; border: 1px solid var(--border); width: auto; padding: 5px 15px; }
-        
-        table { width: 100%; border-collapse: collapse; }
-        th { text-align: left; padding: 12px; border-bottom: 1px solid var(--border); font-size: 12px; color: #8b949e; }
-        td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 13px; }
-        
-        #qr-canvas-box { margin-top: 20px; text-align: center; background: #fff; padding: 10px; border-radius: 4px; display: none; }
-        #qr-canvas-box canvas { width: 160px !important; }
-        
-        .btn-del { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 4px 8px; font-size: 11px; }
-        .btn-del:hover { background: var(--danger); color: #fff; }
-        #log { font-family: monospace; font-size: 11px; color: #7d8590; margin-top: 20px; border-top: 1px solid var(--border); padding-top: 10px; }
+        body { font-family: 'Segoe UI', sans-serif; background: #121212; color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; gap: 40px; }
+        .device { background: #1e1e1e; padding: 30px; border-radius: 25px; width: 350px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); border: 2px solid #333; }
+        h2 { text-align: center; color: #00d4ff; text-transform: uppercase; letter-spacing: 2px; }
+        .screen { background: #000; border-radius: 10px; padding: 20px; margin-bottom: 20px; min-height: 100px; border: 1px solid #00d4ff; color: #00d4ff; font-family: monospace; }
+        button { width: 100%; padding: 15px; margin: 5px 0; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; background: #333; color: white; transition: 0.3s; }
+        button:hover { background: #444; transform: scale(1.02); }
+        .btn-pay { background: #00d4ff; color: black; font-size: 18px; margin-top: 20px; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #333; background: #222; color: white; text-align: center; box-sizing: border-box; }
     </style>
 </head>
 <body>
 
-<div class="grid">
-    <div class="panel">
-        <h3>Input Data</h3>
-        <input type="text" id="pName" placeholder="Full Name">
-        <input type="text" id="pFlight" placeholder="Flight ID">
-        <button class="btn-main" onclick="pushData()">REGISTER & SYNC</button>
-        
-        <div id="qr-canvas-box"></div>
-        <div id="log">Status: Standby</div>
+    <div class="device">
+        <h2>🛒 KASSA</h2>
+        <div class="screen" id="kassa-display">ГОТОВ К ПРОДАЖЕ</div>
+        <button onclick="add('PIZZA', 800)">🍕 PIZZA (800₽)</button>
+        <button onclick="add('COLA', 150)">🥤 COLA (150₽)</button>
+        <button class="btn-pay" onclick="pushToTerminal()">ОПЛАТИТЬ КАРТОЙ</button>
     </div>
 
-    <div class="panel">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-            <h3>Active Database</h3>
-            <button class="btn-refresh" onclick="syncList()">FORCE SYNC</button>
+    <div class="device" style="border-color: #27ae60;">
+        <h2 style="color: #27ae60;">📟 TERMINAL</h2>
+        <div class="screen" id="term-display" style="border-color: #27ae60; color: #27ae60;">ЖДУ ЗАКАЗ</div>
+        <div id="term-ui" style="display:none">
+            <input type="text" id="card_n" placeholder="НОМЕР КАРТЫ">
+            <input type="password" id="pin_n" placeholder="ПИН-КОД">
+            <button onclick="startTransaction()" style="background: #27ae60; color: white;">ПОДТВЕРДИТЬ</button>
         </div>
-        <table>
-            <thead>
-                <tr>
-                    <th>UID</th>
-                    <th>Passenger</th>
-                    <th>Flight</th>
-                    <th>Manage</th>
-                </tr>
-            </thead>
-            <tbody id="data-table"></tbody>
-        </table>
     </div>
-</div>
 
-<script>
-    // --- CONFIGURATION ---
-    const CONFIG = {
-        token: "ВСТАВЬ_СВОЙ_ТОКЕН_ЗДЕСЬ",
-        repo: "ТВОЙ_НИК/ТВОЙ_РЕПО",
-        path: "database.json"
-    };
-
-    function setLog(m) { document.getElementById('log').innerText = `> ${m}`; }
-
-    async function apiReq(method, body = null, sha = null) {
-        const url = `https://api.github.com/repos/${CONFIG.repo}/contents/${CONFIG.path}`;
-        const headers = { Authorization: `token ${CONFIG.token}`, "Content-Type": "application/json" };
-        const payload = body ? { message: "update", content: btoa(JSON.stringify(body, null, 2)), sha } : null;
+    <script>
+        // ДАННЫЕ ПОДКЛЮЧЕНИЯ
+        const SB_URL = 'https://shswkhgwrxsulqqczbjj.supabase.co'; 
+        const SB_KEY = 'ВСТАВЬ_СВОЙ_ANON_KEY_СЮДА'; // Скопируй со скриншота!
         
-        const res = await fetch(url, { method, headers, body: payload ? JSON.stringify(payload) : null });
-        return res.json();
-    }
+        const supabase = supabase.createClient(SB_URL, SB_KEY);
+        const TERM_ID = 'STATION_01';
+        let currentTotal = 0;
 
-    async function syncList() {
-        setLog("Syncing...");
-        const data = await apiReq("GET");
-        const list = JSON.parse(atob(data.content));
-        const tbody = document.getElementById('data-table');
-        tbody.innerHTML = "";
-        
-        list.forEach(item => {
-            tbody.innerHTML += `
-                <tr>
-                    <td><code>${item.id}</code></td>
-                    <td>${item.name}</td>
-                    <td>${item.flight}</td>
-                    <td><button class="btn-del" onclick="removeData('${item.id}')">VOID</button></td>
-                </tr>`;
-        });
-        setLog(`Ready. Records: ${list.length}`);
-        return { list, sha: data.sha };
-    }
+        // ЛОГИКА КАССЫ
+        function add(item, price) {
+            currentTotal += price;
+            document.getElementById('kassa-display').innerText = `ТОВАР: ${item}\nИТОГО: ${currentTotal} ₽`;
+        }
 
-    async function pushData() {
-        const name = document.getElementById('pName').value;
-        const flight = document.getElementById('pFlight').value;
-        if (!name || !flight) return;
+        async function pushToTerminal() {
+            if(currentTotal === 0) return;
+            document.getElementById('kassa-display').innerText = "ОЖИДАНИЕ ТЕРМИНАЛА...";
+            await supabase.from('sessions').upsert({ id: TERM_ID, total: currentTotal, status: 'paying' });
+        }
 
-        setLog("Processing...");
-        const { list, sha } = await syncList();
-        const id = Math.random().toString(36).substr(2, 6).toUpperCase();
-        
-        list.push({ id, name, flight });
-        await apiReq("PUT", list, sha);
-        
-        const box = document.getElementById('qr-canvas-box');
-        box.style.display = 'block';
-        box.innerHTML = "";
-        QRCode.toCanvas(document.createElement('canvas'), id, { width: 160 }, (e, cvs) => box.appendChild(cvs));
-        
-        syncList();
-    }
+        // ЛОГИКА ТЕРМИНАЛА (Realtime)
+        supabase.channel('bank_stream').on('postgres_changes', 
+            { event: 'UPDATE', schema: 'public', table: 'sessions', filter: `id=eq.${TERM_ID}` }, 
+            (payload) => {
+                if(payload.new.status === 'paying') {
+                    document.getElementById('term-display').innerText = `К ОПЛАТЕ: ${payload.new.total} ₽`;
+                    document.getElementById('term-ui').style.display = 'block';
+                }
+                if(payload.new.status === 'success') {
+                    document.getElementById('term-display').innerText = "✅ ОДОБРЕНО";
+                    document.getElementById('term-ui').style.display = 'none';
+                    document.getElementById('kassa-display').innerText = "✅ ОПЛАЧЕНО УСПЕШНО";
+                    setTimeout(() => location.reload(), 4000);
+                }
+            }
+        ).subscribe();
 
-    async function removeData(id) {
-        setLog(`Voiding ${id}...`);
-        const { list, sha } = await syncList();
-        const filtered = list.filter(t => t.id !== id);
-        await apiReq("PUT", filtered, sha);
-        syncList();
-    }
+        async function startTransaction() {
+            const c_num = document.getElementById('card_n').value;
+            const c_pin = document.getElementById('pin_n').value;
+            document.getElementById('term-display').innerText = "ПРОВЕРКА...";
 
-    syncList();
-</script>
+            // 1. Получаем данные карты
+            const { data: card } = await supabase.from('bank').select('*').eq('card_num', c_num).single();
+            const { data: sess } = await supabase.from('sessions').select('total').eq('id', TERM_ID).single();
+
+            if(card && card.pin === c_pin) {
+                if(card.balance >= sess.total) {
+                    // 2. Списываем баланс (обновление)
+                    await supabase.from('bank').update({ balance: card.balance - sess.total }).eq('card_num', c_num);
+                    // 3. Ставим успех
+                    await supabase.from('sessions').update({ status: 'success' }).eq('id', TERM_ID);
+                } else {
+                    alert("НЕДОСТАТОЧНО СРЕДСТВ");
+                    document.getElementById('term-display').innerText = "ОТКАЗ";
+                }
+            } else {
+                alert("НЕВЕРНАЯ КАРТА ИЛИ ПИН");
+                document.getElementById('term-display').innerText = "ОШИБКА";
+            }
+        }
+    </script>
 </body>
 </html>
