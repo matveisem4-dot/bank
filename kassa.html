@@ -2,86 +2,36 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Панель Кассира | Global Bank</title>
+    <title>Управление Банком</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f7f9; margin: 0; padding: 20px; color: #333; }
-        .container { max-width: 900px; margin: auto; display: grid; grid-template-columns: 1fr 350px; gap: 20px; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        h2 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .btn-item { padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: #fff; cursor: pointer; transition: 0.2s; font-size: 16px; }
-        .btn-item:hover { background: #f0f7ff; border-color: #3498db; }
-        .cart-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
-        .total-section { margin-top: 20px; font-size: 24px; font-weight: bold; text-align: right; color: #2ecc71; }
-        .btn-pay { width: 100%; padding: 18px; background: #3498db; color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 15px; }
-        .btn-pay:disabled { background: #bdc3c7; }
-        #status { text-align: center; margin-top: 10px; font-style: italic; color: #7f8c8d; }
+        body { font-family: sans-serif; padding: 40px; background: #fff; }
+        .box { max-width: 400px; border: 1px solid #ddd; padding: 20px; border-radius: 8px; }
+        input { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background: #3498db; color: white; border: none; cursor: pointer; }
     </style>
 </head>
 <body>
-
-<div class="container">
-    <div class="card">
-        <h2>🛍️ Выбор товаров</h2>
-        <div class="menu-grid">
-            <button class="btn-item" onclick="addToCart('Товар А', 1200)">📦 Товар А (1200 ₽)</button>
-            <button class="btn-item" onclick="addToCart('Товар Б', 3500)">💎 Товар Б (3500 ₽)</button>
-            <button class="btn-item" onclick="addToCart('Товар В', 500)">🛠️ Товар В (500 ₽)</button>
-            <button class="btn-item" onclick="addToCart('Товар Г', 890)">🍎 Товар Г (890 ₽)</button>
-        </div>
+    <div class="box">
+        <h2>Регистрация карты</h2>
+        <input id="a_card" placeholder="Номер карты">
+        <input id="a_pin" placeholder="PIN">
+        <input id="a_bal" type="number" placeholder="Начальный баланс">
+        <button onclick="create()">СОЗДАТЬ КАРТУ</button>
     </div>
 
-    <div class="card">
-        <h2>🧾 Текущий чек</h2>
-        <div id="cart-list" style="min-height: 200px;"></div>
-        <div class="total-section" id="total-val">0 ₽</div>
-        <button class="btn-pay" id="pay-btn" onclick="sendToTerminal()">ОТПРАВИТЬ К ОПЛАТЕ</button>
-        <div id="status">Готов к работе</div>
-    </div>
-</div>
+    <script>
+        const URL = 'https://shswkhgwrxsulqqczbjj.supabase.co';
+        const KEY = 'ВСТАВЬ_СЮДА_СВОЙ_ANON_KEY';
+        const sb = supabase.createClient(URL, KEY);
 
-<script>
-    const SB_URL = 'https://shswkhgwrxsulqqczbjj.supabase.co';
-    const SB_KEY = 'ВСТАВЬ_СВОЙ_ANON_KEY_СЮДА';
-    const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
-    
-    let cart = [];
-    let total = 0;
-    const TERM_ID = 'STATION_01';
-
-    function addToCart(name, price) {
-        cart.push({name, price});
-        total += price;
-        renderCart();
-    }
-
-    function renderCart() {
-        const list = document.getElementById('cart-list');
-        list.innerHTML = cart.map(i => `<div class="cart-item"><span>${i.name}</span><span>${i.price} ₽</span></div>`).join('');
-        document.getElementById('total-val').innerText = total + " ₽";
-    }
-
-    async function sendToTerminal() {
-        if(total === 0) return;
-        document.getElementById('pay-btn').disabled = true;
-        document.getElementById('status').innerText = "Ожидание оплаты на терминале...";
-        
-        await supabaseClient.from('sessions').upsert({ 
-            id: TERM_ID, total: total, status: 'paying', cart: cart 
-        });
-
-        // Слушаем ответ от терминала
-        supabaseClient.channel('kassa').on('postgres_changes', 
-            { event: 'UPDATE', schema: 'public', table: 'sessions', filter: `id=eq.${TERM_ID}` }, 
-            (payload) => {
-                if(payload.new.status === 'success') {
-                    alert("Оплата подтверждена!");
-                    location.reload();
-                }
-            }
-        ).subscribe();
-    }
-</script>
+        async function create() {
+            const n = document.getElementById('a_card').value;
+            const p = document.getElementById('a_pin').value;
+            const b = document.getElementById('a_bal').value;
+            await sb.from('bank').insert({ card_num: n, pin: p, balance: b });
+            alert("Клиент зарегистрирован!");
+        }
+    </script>
 </body>
 </html>
