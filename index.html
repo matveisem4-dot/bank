@@ -2,100 +2,95 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Million Global Bank System</title>
+    <title>BANK SYSTEM v3.0</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #121212; color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; gap: 40px; }
-        .device { background: #1e1e1e; padding: 30px; border-radius: 25px; width: 350px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); border: 2px solid #333; }
-        h2 { text-align: center; color: #00d4ff; text-transform: uppercase; letter-spacing: 2px; }
-        .screen { background: #000; border-radius: 10px; padding: 20px; margin-bottom: 20px; min-height: 100px; border: 1px solid #00d4ff; color: #00d4ff; font-family: monospace; }
-        button { width: 100%; padding: 15px; margin: 5px 0; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; background: #333; color: white; transition: 0.3s; }
-        button:hover { background: #444; transform: scale(1.02); }
-        .btn-pay { background: #00d4ff; color: black; font-size: 18px; margin-top: 20px; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #333; background: #222; color: white; text-align: center; box-sizing: border-box; }
+        body { font-family: 'Courier New', monospace; background: #0a0a0a; color: #00ff41; display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; padding: 20px; }
+        .block { background: #111; border: 2px solid #00ff41; padding: 20px; border-radius: 10px; width: 320px; box-shadow: 0 0 15px rgba(0,255,65,0.2); }
+        h2 { text-align: center; font-size: 1.2em; border-bottom: 1px solid #00ff41; padding-bottom: 10px; }
+        button { width: 100%; padding: 12px; margin: 5px 0; background: #00ff41; color: black; border: none; font-weight: bold; cursor: pointer; border-radius: 5px; }
+        button:hover { background: #008f11; color: white; }
+        input { width: 100%; padding: 10px; margin: 5px 0; background: #000; border: 1px solid #00ff41; color: #00ff41; box-sizing: border-box; }
+        .screen { background: #002200; padding: 15px; border-radius: 5px; min-height: 50px; margin-bottom: 10px; border: 1px inset #00ff41; font-size: 0.9em; }
     </style>
 </head>
 <body>
 
-    <div class="device">
-        <h2>🛒 KASSA</h2>
-        <div class="screen" id="kassa-display">ГОТОВ К ПРОДАЖЕ</div>
-        <button onclick="add('PIZZA', 800)">🍕 PIZZA (800₽)</button>
-        <button onclick="add('COLA', 150)">🥤 COLA (150₽)</button>
-        <button class="btn-pay" onclick="pushToTerminal()">ОПЛАТИТЬ КАРТОЙ</button>
+    <div class="block">
+        <h2>[ KASSA_STATION ]</h2>
+        <div class="screen" id="k-disp">ВЫБЕРИТЕ ТОВАР</div>
+        <button onclick="add('BURGER', 500)">+ BURGER (500)</button>
+        <button onclick="add('SODA', 150)">+ SODA (150)</button>
+        <button onclick="send()" style="background: #ffaa00">ОТПРАВИТЬ НА ТЕРМИНАЛ</button>
     </div>
 
-    <div class="device" style="border-color: #27ae60;">
-        <h2 style="color: #27ae60;">📟 TERMINAL</h2>
-        <div class="screen" id="term-display" style="border-color: #27ae60; color: #27ae60;">ЖДУ ЗАКАЗ</div>
-        <div id="term-ui" style="display:none">
-            <input type="text" id="card_n" placeholder="НОМЕР КАРТЫ">
-            <input type="password" id="pin_n" placeholder="ПИН-КОД">
-            <button onclick="startTransaction()" style="background: #27ae60; color: white;">ПОДТВЕРДИТЬ</button>
+    <div class="block">
+        <h2>[ TERMINAL_01 ]</h2>
+        <div class="screen" id="t-disp">ОЖИДАНИЕ...</div>
+        <div id="t-ui" style="display:none">
+            <input type="text" id="t-card" placeholder="НОМЕР КАРТЫ">
+            <input type="password" id="t-pin" placeholder="PIN-КОД">
+            <button onclick="pay()">ПОДТВЕРДИТЬ ОПЛАТУ</button>
         </div>
     </div>
 
+    <div class="block">
+        <h2>[ ADMIN_PANEL ]</h2>
+        <div class="screen">РЕГИСТРАЦИЯ КЛИЕНТА</div>
+        <input type="text" id="a-card" placeholder="НОВЫЙ НОМЕР">
+        <input type="text" id="a-pin" placeholder="НОВЫЙ PIN">
+        <input type="number" id="a-bal" placeholder="БАЛАНС">
+        <button onclick="reg()" style="background: #0088ff">СОЗДАТЬ КАРТУ</button>
+    </div>
+
     <script>
-        // ДАННЫЕ ПОДКЛЮЧЕНИЯ
-        const SB_URL = 'https://shswkhgwrxsulqqczbjj.supabase.co'; 
-        const SB_KEY = 'ВСТАВЬ_СВОЙ_ANON_KEY_СЮДА'; // Скопируй со скриншота!
+        // === КОНФИГУРАЦИЯ (ВСТАВЬ СВОЕ) ===
+        const S_URL = 'https://shswkhgwrxsulqqczbjj.supabase.co';
+        const S_KEY = 'ТВОЙ_ANON_KEY_ТУТ'; // Тот самый sb_publishable...
+        const sb = supabase.createClient(S_URL, S_KEY);
         
-        const supabase = supabase.createClient(SB_URL, SB_KEY);
-        const TERM_ID = 'STATION_01';
-        let currentTotal = 0;
+        let sum = 0;
+        const TID = '1234';
 
-        // ЛОГИКА КАССЫ
-        function add(item, price) {
-            currentTotal += price;
-            document.getElementById('kassa-display').innerText = `ТОВАР: ${item}\nИТОГО: ${currentTotal} ₽`;
+        // КАССА
+        function add(n, p) { sum += p; document.getElementById('k-disp').innerText = `ЗАКАЗ: ${n}\nИТОГО: ${sum} ₽`; }
+        async function send() {
+            await sb.from('sessions').upsert({ id: TID, total: sum, status: 'paying' });
+            document.getElementById('k-disp').innerText = "ОЖИДАНИЕ ОПЛАТЫ...";
         }
 
-        async function pushToTerminal() {
-            if(currentTotal === 0) return;
-            document.getElementById('kassa-display').innerText = "ОЖИДАНИЕ ТЕРМИНАЛА...";
-            await supabase.from('sessions').upsert({ id: TERM_ID, total: currentTotal, status: 'paying' });
+        // ТЕРМИНАЛ (Слушает базу)
+        sb.channel('pos').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'sessions', filter: `id=eq.${TID}` }, (p) => {
+            if(p.new.status === 'paying') {
+                document.getElementById('t-disp').innerText = "К ОПЛАТЕ: " + p.new.total + " ₽";
+                document.getElementById('t-ui').style.display = 'block';
+            }
+            if(p.new.status === 'success') {
+                document.getElementById('t-disp').innerText = "ОПЛАЧЕНО УСПЕШНО";
+                document.getElementById('t-ui').style.display = 'none';
+                sum = 0;
+            }
+        }).subscribe();
+
+        async function pay() {
+            const card = document.getElementById('t-card').value;
+            const pin = document.getElementById('t-pin').value;
+            const { data: dbCard } = await sb.from('bank').select('*').eq('card_num', card).single();
+            const { data: sess } = await sb.from('sessions').select('total').eq('id', TID).single();
+
+            if(dbCard && dbCard.pin === pin && dbCard.balance >= sess.total) {
+                await sb.from('bank').update({ balance: dbCard.balance - sess.total }).eq('card_num', card);
+                await sb.from('sessions').update({ status: 'success' }).eq('id', TID);
+            } else { alert("ОТКАЗ В ОПЛАТЕ!"); }
         }
 
-        // ЛОГИКА ТЕРМИНАЛА (Realtime)
-        supabase.channel('bank_stream').on('postgres_changes', 
-            { event: 'UPDATE', schema: 'public', table: 'sessions', filter: `id=eq.${TERM_ID}` }, 
-            (payload) => {
-                if(payload.new.status === 'paying') {
-                    document.getElementById('term-display').innerText = `К ОПЛАТЕ: ${payload.new.total} ₽`;
-                    document.getElementById('term-ui').style.display = 'block';
-                }
-                if(payload.new.status === 'success') {
-                    document.getElementById('term-display').innerText = "✅ ОДОБРЕНО";
-                    document.getElementById('term-ui').style.display = 'none';
-                    document.getElementById('kassa-display').innerText = "✅ ОПЛАЧЕНО УСПЕШНО";
-                    setTimeout(() => location.reload(), 4000);
-                }
-            }
-        ).subscribe();
-
-        async function startTransaction() {
-            const c_num = document.getElementById('card_n').value;
-            const c_pin = document.getElementById('pin_n').value;
-            document.getElementById('term-display').innerText = "ПРОВЕРКА...";
-
-            // 1. Получаем данные карты
-            const { data: card } = await supabase.from('bank').select('*').eq('card_num', c_num).single();
-            const { data: sess } = await supabase.from('sessions').select('total').eq('id', TERM_ID).single();
-
-            if(card && card.pin === c_pin) {
-                if(card.balance >= sess.total) {
-                    // 2. Списываем баланс (обновление)
-                    await supabase.from('bank').update({ balance: card.balance - sess.total }).eq('card_num', c_num);
-                    // 3. Ставим успех
-                    await supabase.from('sessions').update({ status: 'success' }).eq('id', TERM_ID);
-                } else {
-                    alert("НЕДОСТАТОЧНО СРЕДСТВ");
-                    document.getElementById('term-display').innerText = "ОТКАЗ";
-                }
-            } else {
-                alert("НЕВЕРНАЯ КАРТА ИЛИ ПИН");
-                document.getElementById('term-display').innerText = "ОШИБКА";
-            }
+        // АДМИНКА
+        async function reg() {
+            const n = document.getElementById('a-card').value;
+            const p = document.getElementById('a-pin').value;
+            const b = document.getElementById('a-bal').value;
+            await sb.from('bank').insert({ card_num: n, pin: p, balance: b });
+            alert("КАРТА СОЗДАНА!");
         }
     </script>
 </body>
